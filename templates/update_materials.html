@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Обновить список номенклатуры{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Обновление списка номенклатуры</h2>
+    <button class="btn btn-primary" id="openModal">Добавить материал</button>
+</div>
+
+<!-- Модальное окно -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Обновить список номенклатуры</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Форма добавления вручную -->
+                <form id="updateMaterialForm">
+                    <div class="mb-3">
+                        <label for="article" class="form-label">Артикул</label>
+                        <input type="text" id="article" name="article" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="material" class="form-label">Материал</label>
+                        <input type="text" id="material" name="material" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="unit" class="form-label">Ед. изм.</label>
+                        <input type="text" id="unit" name="unit" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Добавить</button>
+                </form>
+
+                <hr>
+
+                <!-- Форма импорта из Excel -->
+                <h5>Импорт из Excel</h5>
+                <form id="importExcelForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">Выберите файл (.xlsx)</label>
+                        <input type="file" id="excelFile" name="file" class="form-control" accept=".xlsx" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Импортировать</button>
+                </form>
+                <div id="responseMessage" class="alert mt-3" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("updateMaterialForm").onsubmit = async function (e) {
+    e.preventDefault();
+
+    const formData = {
+        article: document.getElementById("article").value,
+        material: document.getElementById("material").value,
+        unit: document.getElementById("unit").value
+    };
+
+    const responseMessage = document.getElementById("responseMessage");
+    responseMessage.style.display = "none";
+    responseMessage.classList.remove("alert-success", "alert-danger");
+
+    try {
+        const response = await fetch("/update_materials", {  // Убедитесь в правильности URL
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData)
+        });
+        const result = await response.json();
+
+        responseMessage.textContent = result.message;
+        responseMessage.classList.add(result.status === "success" ? "alert-success" : "alert-danger");
+        responseMessage.style.display = "block";
+
+        if (result.status === "success") {
+            document.getElementById("updateMaterialForm").reset();
+        }
+    } catch (error) {
+        responseMessage.textContent = "Произошла ошибка при добавлении материала.";
+        responseMessage.classList.add("alert-danger");
+        responseMessage.style.display = "block";
+    }
+};
+</script>
+{% endblock %}

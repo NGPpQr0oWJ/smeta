@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Детали изделия{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Заголовок -->
+    <h1 class="text-center mb-4">Детали изделия: {{ product[1] }}</h1>
+
+    <!-- Информация о продукте -->
+    <ul class="list-group mb-4">
+        <li class="list-group-item"><strong>№ Заказа:</strong> {{ product[2] }}</li>
+        <li class="list-group-item"><strong>Дата создания:</strong> {{ product[3] }}</li>
+        {% if product[4] %}
+            <li class="list-group-item">
+                <a href="{{ url_for('download_project', product_id=product[0]) }}" class="btn btn-primary">Скачать проект</a>
+            </li>
+        {% endif %}
+    </ul>
+
+    <!-- Список материалов -->
+    <h2 class="text-center mb-4">Материалы изделия</h2>
+    <ul class="list-group mb-4">
+        {% for material in materials %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Материал:</strong> {{ material[3] }} |
+                    <strong>Артикул:</strong> {{ material[2] }} |
+                    <strong>Кол-во:</strong> {{ material[4] }} {{ material[5] }}
+                    {% if material[6] %}
+                        | <strong>Примечание:</strong> {{ material[6] }}
+                    {% endif %}
+                </div>
+                <form action="{{ url_for('delete_material', material_id=material[0]) }}" method="post" style="margin: 0;">
+                    <button class="btn btn-danger btn-sm" type="submit">Удалить</button>
+                </form>
+            </li>
+        {% else %}
+            <li class="list-group-item text-center">Материалы не добавлены</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Кнопка для добавления материала -->
+    <div class="text-center mb-4">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMaterialModal">Добавить материал</button>
+    </div>
+
+    <!-- Модальное окно для добавления материала -->
+    <div class="modal fade" id="addMaterialModal" tabindex="-1" aria-labelledby="addMaterialModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMaterialModalLabel">Добавить материал</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <form id="addMaterialForm" action="{{ url_for('add_material', product_id=product[0]) }}" method="post">
+                    <div class="modal-body">
+                        <!-- Поле с Select2 для поиска материала -->
+                        <div class="mb-3">
+                            <label for="materialSelect" class="form-label">Поиск материала</label>
+                            <select id="materialSelect" name="materialSelect" class="form-control" style="width: 100%;">
+                                <option value="" disabled selected>Начните вводить название или артикул</option>
+                            </select>
+                        </div>
+
+                        <!-- Поля для заполнения информации -->
+                        <div class="mb-3">
+                            <label for="article" class="form-label">Артикул</label>
+                            <input type="text" id="article" name="article" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="unit" class="form-label">Ед. изм.</label>
+                            <input type="text" id="unit" name="unit" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Количество</label>
+                            <input type="number" id="quantity" name="quantity" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Примечание</label>
+                            <select id="notes" name="notes" class="form-select">
+                                <option value="Распил">Распил</option>
+                                <option value="Сборка каркаса">Сборка каркаса</option>
+                                <option value="Обивка">Обивка</option>
+                                <option value="Поролонные работы">Поролонные работы</option>
+                                <option value="Пошивочные работы">Пошивочные работы</option>
+                                <option value="Столярные работы">Столярные работы</option>
+                                <option value="Покраска">Покраска</option>
+                                <option value="Металлообработка">Металлообработка</option>
+                                <option value="Сборка">Сборка</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-success">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<!-- Подключение Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#materialSelect').select2({
+            placeholder: "Начните вводить название или артикул",
+            minimumInputLength: 2,
+            ajax: {
+                url: '/search_material',  // Маршрут Flask
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term };  // Передаём параметр 'q' на сервер
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.map(item => ({
+                            id: item.Артикул,
+                            text: `${item.Материал} (${item.Артикул}, ${item['Ед. изм.']})`,
+                            unit: item['Ед. изм.']
+                        }))
+                    };
+                }
+            }
+        });
+
+        // Заполняем поля формы при выборе материала
+        $('#materialSelect').on('select2:select', function (e) {
+            const data = e.params.data;
+            $('#article').val(data.id);
+            $('#unit').val(data.unit);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

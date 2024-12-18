@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Технологическая карта{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <!-- Пользовательские стили -->
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .navbar {
+            background-color: #1f1f1f;
+        }
+        .navbar-brand img {
+            height: 40px;
+        }
+        .btn {
+            background-color: #3a3a3a;
+            border-color: #5a5a5a;
+            color: #ffffff;
+        }
+        .btn:hover {
+            background-color: #5a5a5a;
+        }
+        .btn-green {
+            background-color: #28a745;
+            color: #ffffff;
+        }
+        .btn-green:hover {
+            background-color: #218838;
+        }
+        .table {
+            color: #ffffff;
+        }
+        .table th, .table td {
+            border-color: #5a5a5a;
+        }
+        .modal-content {
+            background-color: #1f1f1f;
+            color: #ffffff;
+            border-color: #5a5a5a;
+        }
+        .form-control {
+            background-color: #2a2a2a;
+            color: #ffffff;
+            border-color: #5a5a5a;
+        }
+        .form-control:focus {
+            background-color: #2a2a2a;
+            color: #ffffff;
+            border-color: #ffffff;
+        }
+        .form-label {
+            color: #ffffff;
+        }
+        .alert {
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="{{ url_for('static', filename='logo.svg') }}" alt="Логотип">
+            </a>
+            <form class="d-flex ms-auto" method="get" action="{{ url_for('index') }}">
+                <input class="form-control me-2" type="search" name="search" placeholder="Поиск..." value="{{ search_query }}">
+                <button class="btn btn-outline-success" type="submit">Поиск</button>
+            </form>
+            <div class="d-flex">
+                {% if session.get('username') == 'admin' %}
+                    <a href="{{ url_for('add_user') }}" class="btn btn-primary me-2">Добавить пользователя</a>
+                {% endif %}
+                <button id="openModal" class="btn btn-green me-2">Обновить список номенклатуры</button>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контейнер -->
+    <div class="container py-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Модальное окно -->
+    <div class="modal" id="updateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Обновить список номенклатуры</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма добавления вручную -->
+                    <form id="updateMaterialForm">
+                        <div class="mb-3">
+                            <label for="article" class="form-label">Артикул</label>
+                            <input type="text" id="article" name="Артикул" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="material" class="form-label">Материал</label>
+                            <input type="text" id="material" name="Материал" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="unit" class="form-label">Ед. изм.</label>
+                            <input type="text" id="unit" name="Ед. изм." class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Добавить</button>
+                    </form>
+
+                    <hr>
+
+                    <!-- Форма импорта Excel -->
+                    <h5>Импорт из Excel</h5>
+                    <form id="importExcelForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label">Выберите файл (.xlsx)</label>
+                            <input type="file" id="excelFile" name="file" class="form-control" accept=".xlsx" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Импортировать</button>
+                    </form>
+                    <div id="responseMessage" class="alert alert-info mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS и Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <!-- Инициализация Select2 -->
+    <script>
+        $(document).ready(function() {
+            $('#materialSelect').select2({
+                placeholder: "Начните вводить название или артикул",
+                minimumInputLength: 2,
+                ajax: {
+                    url: '/search_material',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term  // Передаём введённый текст на сервер
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.map(item => ({
+                                id: item.Артикул,
+                                text: `${item.Материал} (${item.Артикул}, ${item['Ед. изм.']})`,
+                                unit: item['Ед. изм.']
+                            }))
+                        };
+                    },
+                    cache: true
+                }
+            });
+    
+            // Заполняем поля формы при выборе результата
+            $('#materialSelect').on('select2:select', function (e) {
+                const data = e.params.data;
+                $('#article').val(data.id);  // Заполняем артикул
+                $('#unit').val(data.unit);   // Заполняем единицу измерения
+            });
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

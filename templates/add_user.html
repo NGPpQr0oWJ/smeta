@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить пользователя{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-4">Добавить пользователя</h1>
+
+    <!-- Сообщение об ошибке -->
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Форма для добавления пользователя -->
+    <form action="{{ url_for('add_user') }}" method="post" class="mx-auto" style="max-width: 500px;">
+        <!-- Поле ФИО -->
+        <div class="mb-3">
+            <label for="fio" class="form-label">ФИО</label>
+            <input type="text" id="fio" name="fio" class="form-control" placeholder="Введите ФИО" required>
+        </div>
+        <!-- Поле Имя пользователя -->
+        <div class="mb-3">
+            <label for="username" class="form-label">Имя пользователя</label>
+            <input type="text" id="username" name="username" class="form-control" placeholder="Введите имя пользователя" required>
+        </div>
+        <!-- Поле Пароль -->
+        <div class="mb-3">
+            <label for="password" class="form-label">Пароль</label>
+            <input type="password" id="password" name="password" class="form-control" placeholder="Введите пароль" required>
+        </div>
+        <!-- Кнопка отправки -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-success">Добавить пользователя</button>
+        </div>
+    </form>
+
+    <!-- Кнопка возврата -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Назад</a>
+    </div>
+</div>
+{% endblock %}

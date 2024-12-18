@@ -1,0 +1,13 @@
+nohup: ignoring input
+Usage: flask run [OPTIONS]
+Try 'flask run --help' for help.
+
+Error: While importing 'main', an ImportError was raised:
+
+Traceback (most recent call last):
+  File "/home/user/venv/lib/python3.12/site-packages/flask/cli.py", line 245, in locate_app
+    __import__(module_name)
+  File "/home/user/Desktop/smeta/main.py", line 3, in <module>
+    import pandas as pd
+ModuleNotFoundError: No module named 'pandas'
+
